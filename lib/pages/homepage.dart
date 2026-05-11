@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:granth/pages/mainpage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -91,7 +92,7 @@ class _HomePageState extends State<HomePage>
                     fontSize: 20,
                   ),
                 ),
-                const Spacer(), 
+                const Spacer(),
                 Text(
                   'swipe up',
                   style: TextStyle(
@@ -174,26 +175,36 @@ class _HomePageState extends State<HomePage>
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => MainPage()),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFFc6b498),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 50, vertical: 15),
+                            horizontal: 50,
+                            vertical: 15,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
                           textStyle: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                          ),  
+                          ),
                         ),
-                        child: const Text('Login', 
-                        style: TextStyle(color: Colors.black,
-                        fontFamily: 'JimNightshade', 
-                        fontSize: 25),
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontFamily: 'JimNightshade',
+                            fontSize: 25,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 40)
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
