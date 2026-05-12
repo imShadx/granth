@@ -1,24 +1,54 @@
 import 'package:flutter/material.dart';
 import 'homepage.dart';
 import 'package:granth/pages/bookdetail.dart';
+import 'package:granth/models/book_model.dart';
+import 'package:granth/services/book_service.dart';
+import 'package:granth/pages/savedpage.dart';
 
-class MainPage extends StatelessWidget {
+class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
-  final List<Map<String, String>> _allBooks = const [
-    {'title': 'The Hobbit', 'author': 'J.R.R. Tolkien', 'rating': '4.9'},
-    {'title': 'Brave New World', 'author': 'Aldous Huxley', 'rating': '4.6'},
-    {'title': 'Crime & Punishment', 'author': 'Dostoevsky', 'rating': '4.7'},
-    {'title': 'The Alchemist', 'author': 'Paulo Coelho', 'rating': '4.5'},
-    {'title': 'Moby Dick', 'author': 'Herman Melville', 'rating': '4.4'},
-    {'title': 'Jane Eyre', 'author': 'Charlotte Brontë', 'rating': '4.7'},
-    {'title': 'The Odyssey', 'author': 'Homer', 'rating': '4.6'},
-    {'title': 'Don Quixote', 'author': 'Cervantes', 'rating': '4.5'},
-    {'title': 'Anna Karenina', 'author': 'Leo Tolstoy', 'rating': '4.8'},
-    {'title': 'Frankenstein', 'author': 'Mary Shelley', 'rating': '4.6'},
-    {'title': 'The Trial', 'author': 'Franz Kafka', 'rating': '4.5'},
-    {'title': 'Middlemarch', 'author': 'George Eliot', 'rating': '4.6'},
-  ];
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  final _bookService = BookService();
+  List<Book> _recommendations = [];
+  List<Book> _searchResults = [];
+  bool _isLoading = true;
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecommendations();
+  }
+
+  Future<void> _loadRecommendations() async {
+    final books = await _bookService.getRecommendations();
+    setState(() {
+      _recommendations = books;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _searchBooks(String query) async {
+    if (query.trim().isEmpty) return;
+    setState(() => _isSearching = true);
+    final books = await _bookService.searchBooks(query);
+    setState(() {
+      _searchResults = books;
+      _isSearching = false;
+    });
+  }
+
+  void _openBookDetail(BuildContext context, Book book) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => BookDetailPage(book: book)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +74,32 @@ class MainPage extends StatelessWidget {
                 ),
                 color: const Color(0xFFF5F0E8),
                 items: [
+                  PopupMenuItem(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SavedPage(),
+                        ),
+                      );
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(Icons.bookmark, size: 18, color: Colors.black),
+                        SizedBox(width: 10),
+                        Text(
+                          'SAVED',
+                          style: TextStyle(
+                            fontFamily: 'JimNightshade',
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   PopupMenuItem(
                     onTap: () {
                       Navigator.pushReplacement(
@@ -129,8 +185,7 @@ class MainPage extends StatelessWidget {
                 icon: const Icon(Icons.person, color: Colors.black, size: 20),
                 onPressed: () {},
                 padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               ),
             ),
           ),
@@ -143,30 +198,35 @@ class MainPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 8),
+
+              // --- TODAY'S PICKS ---
               _sectionLabel("TODAY'S PICKS"),
               const SizedBox(height: 12),
 
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _bookCard(context, 'Dune', 'Frank Herbert', '4.8'),
-                    const SizedBox(width: 12),
-                    _bookCard(context, '1984', 'George Orwell', '4.7'),
-                    const SizedBox(width: 12),
-                    _bookCard(
-                        context, 'Kafka on the Shore', 'Haruki Murakami', '4.6'),
-                    const SizedBox(width: 12),
-                    _bookCard(context, 'Dracula', 'Bram Stoker', '4.6'),
-                    const SizedBox(width: 12),
-                    _bookCard(context, 'Odyssey', 'Homer', '4.6'),
-                  ],
-                ),
-              ),
+              _isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(color: Colors.black),
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _recommendations
+                            .map(
+                              (book) => Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: _bookCard(context, book),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
 
               const SizedBox(height: 28),
 
-              // Search bar
+              // --- SEARCH BAR ---
               Container(
                 decoration: const BoxDecoration(
                   color: Color(0xFFF5F0E8),
@@ -185,14 +245,7 @@ class MainPage extends StatelessWidget {
                   ],
                 ),
                 child: TextField(
-                  onSubmitted: (value) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Searching for "$value"...'),
-                        backgroundColor: Colors.black,
-                      ),
-                    );
-                  },
+                  onSubmitted: _searchBooks,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -217,37 +270,48 @@ class MainPage extends StatelessWidget {
 
               const SizedBox(height: 28),
 
-              _sectionLabel('BROWSE ALL'),
+              // --- BROWSE / SEARCH RESULTS ---
+              _sectionLabel(
+                _searchResults.isNotEmpty ? 'RESULTS' : 'BROWSE ALL',
+              ),
               const SizedBox(height: 12),
 
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _allBooks.length,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.6,
-                ),
-                itemBuilder: (context, index) {
-                  final book = _allBooks[index];
-                  return _smallBookCard(
-                    context,
-                    book['title']!,
-                    book['author']!,
-                    book['rating']!,
-                  );
-                },
-              ),
+              _isSearching
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(color: Colors.black),
+                      ),
+                    )
+                  : GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _searchResults.isNotEmpty
+                          ? _searchResults.length
+                          : _recommendations.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 0.6,
+                          ),
+                      itemBuilder: (context, index) {
+                        final book = _searchResults.isNotEmpty
+                            ? _searchResults[index]
+                            : _recommendations[index];
+                        return _smallBookCard(context, book);
+                      },
+                    ),
 
               const SizedBox(height: 28),
 
               Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.black, width: 2),
                   ),
@@ -273,7 +337,6 @@ class MainPage extends StatelessWidget {
 
   Widget _sectionLabel(String text) {
     return Container(
-      // color: Colors.black,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       child: Text(
         text,
@@ -288,24 +351,9 @@ class MainPage extends StatelessWidget {
     );
   }
 
-  void _openBookDetail(
-      BuildContext context, String title, String author, String rating) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BookDetailPage(
-          title: title,
-          author: author,
-          rating: rating,
-        ),
-      ),
-    );
-  }
-
-  Widget _bookCard(
-      BuildContext context, String title, String author, String rating) {
+  Widget _bookCard(BuildContext context, Book book) {
     return GestureDetector(
-      onTap: () => _openBookDetail(context, title, author, rating),
+      onTap: () => _openBookDetail(context, book),
       child: Container(
         width: 140,
         padding: const EdgeInsets.all(10),
@@ -318,11 +366,7 @@ class MainPage extends StatelessWidget {
             right: BorderSide(color: Colors.black, width: 2),
           ),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black,
-              offset: Offset(4, 4),
-              blurRadius: 0,
-            ),
+            BoxShadow(color: Colors.black, offset: Offset(4, 4), blurRadius: 0),
           ],
         ),
         child: Column(
@@ -332,15 +376,25 @@ class MainPage extends StatelessWidget {
               height: 155,
               width: double.infinity,
               color: const Color(0xFFFF3F00),
-              child: const Icon(
-                Icons.auto_stories,
-                size: 50,
-                color: Colors.black,
-              ),
+              child: book.coverId != null
+                  ? Image.network(
+                      _bookService.getCoverUrl(book.coverId!),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.auto_stories,
+                        size: 50,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.auto_stories,
+                      size: 50,
+                      color: Colors.black,
+                    ),
             ),
             const SizedBox(height: 8),
             Text(
-              title,
+              book.title,
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 fontSize: 13,
@@ -351,24 +405,10 @@ class MainPage extends StatelessWidget {
             ),
             const SizedBox(height: 3),
             Text(
-              author,
+              book.author,
               style: const TextStyle(fontSize: 10, color: Colors.black54),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Container(
-              color: Colors.black,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-              child: Text(
-                '★ $rating',
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFFFF3F00),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
             ),
           ],
         ),
@@ -376,10 +416,9 @@ class MainPage extends StatelessWidget {
     );
   }
 
-  Widget _smallBookCard(
-      BuildContext context, String title, String author, String rating) {
+  Widget _smallBookCard(BuildContext context, Book book) {
     return GestureDetector(
-      onTap: () => _openBookDetail(context, title, author, rating),
+      onTap: () => _openBookDetail(context, book),
       child: Container(
         padding: const EdgeInsets.all(7),
         decoration: const BoxDecoration(
@@ -391,11 +430,7 @@ class MainPage extends StatelessWidget {
             right: BorderSide(color: Colors.black, width: 2),
           ),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black,
-              offset: Offset(3, 3),
-              blurRadius: 0,
-            ),
+            BoxShadow(color: Colors.black, offset: Offset(3, 3), blurRadius: 0),
           ],
         ),
         child: Column(
@@ -405,16 +440,26 @@ class MainPage extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 color: const Color(0xFFFF3F00),
-                child: const Icon(
-                  Icons.auto_stories,
-                  size: 28,
-                  color: Colors.black,
-                ),
+                child: book.coverId != null
+                    ? Image.network(
+                        _bookService.getCoverUrl(book.coverId!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.auto_stories,
+                          size: 28,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.auto_stories,
+                        size: 28,
+                        color: Colors.black,
+                      ),
               ),
             ),
             const SizedBox(height: 5),
             Text(
-              title,
+              book.title,
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 fontSize: 10,
@@ -425,24 +470,10 @@ class MainPage extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              author,
+              book.author,
               style: const TextStyle(fontSize: 8, color: Colors.black54),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 3),
-            Container(
-              color: Colors.black,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-              child: Text(
-                '★ $rating',
-                style: const TextStyle(
-                  fontSize: 8,
-                  color: Color(0xFFFF3F00),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
             ),
           ],
         ),

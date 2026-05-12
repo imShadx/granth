@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:granth/pages/mainpage.dart';
+import 'package:granth/services/auth_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,6 +13,8 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _offsetAnimation;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void initState() {
@@ -30,6 +33,8 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _controller.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -138,7 +143,11 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Icon(Icons.keyboard_arrow_up, size: 24, color: Colors.black),
+                const Icon(
+                  Icons.keyboard_arrow_up,
+                  size: 24,
+                  color: Colors.black,
+                ),
                 const SizedBox(height: 80),
               ],
             ),
@@ -153,7 +162,7 @@ class _HomePageState extends State<HomePage>
             snapSizes: const [0.07, 0.62],
             builder: (context, scrollController) {
               return Container(
-                decoration:  BoxDecoration(
+                decoration: BoxDecoration(
                   color: Color(0xFFF5F0E8).withOpacity(0.95),
                   border: Border(
                     top: BorderSide(color: Colors.black, width: 3),
@@ -206,24 +215,54 @@ class _HomePageState extends State<HomePage>
                             const SizedBox(height: 28),
 
                             // Email field
-                            _brutalField(hint: 'EMAIL'),
+                            _brutalField(
+                              hint: 'EMAIL',
+                              controller: _emailController,
+                            ),
 
                             const SizedBox(height: 16),
 
                             // Password field
-                            _brutalField(hint: 'PASSWORD', obscure: true),
+                            _brutalField(
+                              hint: 'PASSWORD',
+                              obscure: true,
+                              controller: _passwordController,
+                            ),
 
                             const SizedBox(height: 28),
 
                             // Login button
                             GestureDetector(
-                              onTap: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MainPage(),
-                                  ),
+                              onTap: () async {
+                                if (_emailController.text.trim().isEmpty ||
+                                    _passwordController.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('FILL IN ALL FIELDS →'),
+                                      backgroundColor: Colors.black,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                final error = await AuthService().signIn(
+                                  _emailController.text.trim(),
+                                  _passwordController.text.trim(),
                                 );
+                                if (error == null) {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MainPage(),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(error),
+                                      backgroundColor: Colors.black,
+                                    ),
+                                  );
+                                }
                               },
                               child: Container(
                                 width: double.infinity,
@@ -259,6 +298,52 @@ class _HomePageState extends State<HomePage>
                               ),
                             ),
 
+                            const SizedBox(height: 16),
+                            GestureDetector(
+                              onTap: () async {
+                                if (_emailController.text.trim().isEmpty ||
+                                    _passwordController.text.trim().isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('FILL IN ALL FIELDS →'),
+                                      backgroundColor: Colors.black,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                final error = await AuthService().signUp(
+                                  _emailController.text.trim(),
+                                  _passwordController.text.trim(),
+                                );
+                                if (error == null) {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MainPage(),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(error),
+                                      backgroundColor: Colors.black,
+                                    ),
+                                  );
+                                }
+                              },
+                              child: const Center(
+                                child: Text(
+                                  'No account? SIGN UP →',
+                                  style: TextStyle(
+                                    fontFamily: 'JimNightshade',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black54,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
                             const SizedBox(height: 40),
                           ],
                         ),
@@ -274,7 +359,11 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Widget _brutalField({required String hint, bool obscure = false}) {
+  Widget _brutalField({
+    required String hint,
+    bool obscure = false,
+    TextEditingController? controller,
+  }) {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFFF5F0E8),
@@ -286,6 +375,7 @@ class _HomePageState extends State<HomePage>
         ),
       ),
       child: TextField(
+        controller: controller,
         obscureText: obscure,
         style: const TextStyle(
           fontWeight: FontWeight.bold,

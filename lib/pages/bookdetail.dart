@@ -1,21 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:granth/models/book_model.dart';
+import 'package:granth/services/book_service.dart';
+import 'package:granth/services/firestore_service.dart';
 
-class BookDetailPage extends StatelessWidget {
-  final String title;
-  final String author;
-  final String rating;
+class BookDetailPage extends StatefulWidget {
+  final Book book;
 
-  // TODO: when API is connected, add:
-  // final String coverUrl;
-  // final String summary;
-  // final String bookId;
+  const BookDetailPage({super.key, required this.book});
 
-  const BookDetailPage({
-    super.key,
-    required this.title,
-    required this.author,
-    required this.rating,
-  });
+  @override
+  State<BookDetailPage> createState() => _BookDetailPageState();
+}
+
+class _BookDetailPageState extends State<BookDetailPage> {
+  final _bookService = BookService();
+  final _firestoreService = FirestoreService();
+  String? _summary;
+  bool _loadingSummary = true;
+  bool _isSaved = false;
+  bool _savingInProgress = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSummary();
+    _checkIfSaved();
+  }
+
+  Future<void> _fetchSummary() async {
+    final summary = await _bookService.getBookSummary(widget.book.id);
+    setState(() {
+      _summary = summary;
+      _loadingSummary = false;
+    });
+  }
+
+  Future<void> _checkIfSaved() async {
+    final saved = await _firestoreService.isBookSaved(widget.book.id);
+    setState(() => _isSaved = saved);
+  }
+
+  Future<void> _toggleSave() async {
+    setState(() => _savingInProgress = true);
+    if (_isSaved) {
+      await _firestoreService.unsaveBook(widget.book.id);
+    } else {
+      await _firestoreService.saveBook(widget.book);
+    }
+    setState(() {
+      _isSaved = !_isSaved;
+      _savingInProgress = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isSaved ? 'SAVED TO LIBRARY +' : 'REMOVED FROM LIBRARY'),
+        backgroundColor: Colors.black,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,17 +86,12 @@ class BookDetailPage extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black,
-                    offset: Offset(3, 3),
-                    blurRadius: 0,
-                  ),
+                      color: Colors.black,
+                      offset: Offset(3, 3),
+                      blurRadius: 0),
                 ],
               ),
-              child: const Icon(
-                Icons.arrow_back,
-                color: Colors.black,
-                size: 20,
-              ),
+              child: const Icon(Icons.arrow_back, color: Colors.black, size: 20),
             ),
           ),
         ),
@@ -78,7 +115,6 @@ class BookDetailPage extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Book cover
-            // TODO: replace inner content with CachedNetworkImage(url: coverUrl)
             Center(
               child: Container(
                 width: 180,
@@ -93,28 +129,36 @@ class BookDetailPage extends StatelessWidget {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(8, 8),
-                      blurRadius: 0,
-                    ),
+                        color: Colors.black,
+                        offset: Offset(8, 8),
+                        blurRadius: 0),
                   ],
                 ),
-                child: const Icon(
-                  Icons.auto_stories,
-                  size: 90,
-                  color: Colors.black,
-                ),
+                child: widget.book.coverId != null
+                    ? Image.network(
+                        _bookService.getCoverUrl(widget.book.coverId!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.auto_stories,
+                          size: 90,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.auto_stories,
+                        size: 90,
+                        color: Colors.black,
+                      ),
               ),
             ),
 
             const SizedBox(height: 28),
 
-            // Title block
-            Container(
-              // color: Colors.black,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                title.toUpperCase(),
+                widget.book.title.toUpperCase(),
                 style: const TextStyle(
                   fontFamily: 'JimNightshade',
                   fontSize: 26,
@@ -127,11 +171,11 @@ class BookDetailPage extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // Author + rating row
+            // Author row
             Row(
               children: [
                 Text(
-                  'by $author',
+                  'by ${widget.book.author}',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -139,37 +183,17 @@ class BookDetailPage extends StatelessWidget {
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-                const Spacer(),
-                Container(
-                  color: const Color(0xFFFF3F00),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  child: Text(
-                    '★ $rating',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
               ],
             ),
 
             const SizedBox(height: 24),
-
-            // Thick divider
             Container(height: 3, color: Colors.black),
-
             const SizedBox(height: 20),
 
-            // Summary section
-            Container(
-              // color: Colors.black,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              child: const Text(
+            // Summary label
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
                 'SUMMARY',
                 style: TextStyle(
                   fontFamily: 'JimNightshade',
@@ -196,22 +220,28 @@ class BookDetailPage extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black,
-                    offset: Offset(4, 4),
-                    blurRadius: 0,
-                  ),
+                      color: Colors.black,
+                      offset: Offset(4, 4),
+                      blurRadius: 0),
                 ],
               ),
-              // TODO: replace placeholder with summary from API response
-              child: const Text(
-                'Summary will appear here once connected to the book API.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
-                  height: 1.7,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
+              child: _loadingSummary
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(color: Colors.black),
+                      ),
+                    )
+                  : Text(
+                      _summary ?? 'No summary available for this book.',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        height: 1.7,
+                      ),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                    ),
             ),
 
             const SizedBox(height: 32),
@@ -219,11 +249,11 @@ class BookDetailPage extends StatelessWidget {
             // Action buttons
             Row(
               children: [
-                // Read button
+                // Read button (placeholder for now)
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      // TODO: navigate to reader page with book content from API
+                      // TODO: navigate to reader page
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -237,20 +267,16 @@ class BookDetailPage extends StatelessWidget {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFFFF3F00),
-                            offset: Offset(5, 5),
-                            blurRadius: 0,
-                          ),
+                              color: Color(0xFFFF3F00),
+                              offset: Offset(5, 5),
+                              blurRadius: 0),
                         ],
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.menu_book,
-                            color: Color(0xFFFF3F00),
-                            size: 20,
-                          ),
+                          Icon(Icons.menu_book,
+                              color: Color(0xFFFF3F00), size: 20),
                           SizedBox(width: 8),
                           Text(
                             'READ →',
@@ -270,46 +296,58 @@ class BookDetailPage extends StatelessWidget {
 
                 const SizedBox(width: 14),
 
-                // Save button
+                // Save button — live state
                 Expanded(
                   child: GestureDetector(
-                    onTap: () {
-                      // TODO: save book to user's library via API / local DB
-                    },
+                    onTap: _savingInProgress ? null : _toggleSave,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF5F0E8),
-                        border: Border(
+                      decoration: BoxDecoration(
+                        color: _isSaved
+                            ? Colors.black
+                            : const Color(0xFFF5F0E8),
+                        border: const Border(
                           top: BorderSide(color: Colors.black, width: 2),
                           bottom: BorderSide(color: Colors.black, width: 2),
                           left: BorderSide(color: Colors.black, width: 2),
                           right: BorderSide(color: Colors.black, width: 2),
                         ),
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(
-                            color: Colors.black,
-                            offset: Offset(5, 5),
-                            blurRadius: 0,
-                          ),
+                              color: Colors.black,
+                              offset: Offset(5, 5),
+                              blurRadius: 0),
                         ],
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.bookmark_border,
-                            color: Colors.black,
-                            size: 20,
-                          ),
-                          SizedBox(width: 8),
+                          _savingInProgress
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.black, strokeWidth: 2),
+                                )
+                              : Icon(
+                                  _isSaved
+                                      ? Icons.bookmark
+                                      : Icons.bookmark_border,
+                                  color: _isSaved
+                                      ? const Color(0xFFFF3F00)
+                                      : Colors.black,
+                                  size: 20,
+                                ),
+                          const SizedBox(width: 8),
                           Text(
-                            'SAVE +',
+                            _isSaved ? 'SAVED ✓' : 'SAVE +',
                             style: TextStyle(
                               fontFamily: 'JimNightshade',
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: _isSaved
+                                  ? const Color(0xFFF5F0E8)
+                                  : Colors.black,
                               letterSpacing: 2,
                             ),
                           ),
