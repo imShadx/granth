@@ -6,6 +6,8 @@ import 'package:granth/services/book_service.dart';
 import 'package:granth/pages/savedpage.dart';
 import 'package:granth/pages/profilepage.dart';
 import 'package:granth/pages/chatpage.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:granth/widgets/no_connection.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -16,6 +18,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   final _bookService = BookService();
+  bool _hasConnection = true;
   List<Book> _recommendations = [];
   List<Book> _searchResults = [];
   bool _isLoading = true;
@@ -28,6 +31,10 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<void> _loadRecommendations() async {
+    if (!await _checkConnection()) {
+      setState(() => _isLoading = false);
+      return;
+    }
     final books = await _bookService.getRecommendations();
     setState(() {
       _recommendations = books;
@@ -40,12 +47,20 @@ class _MainPageState extends State<MainPage> {
       setState(() => _searchResults = []);
       return;
     }
+    if (!await _checkConnection()) return;
     setState(() => _isSearching = true);
     final books = await _bookService.searchBooks(query);
     setState(() {
       _searchResults = books;
       _isSearching = false;
     });
+  }
+
+  Future<bool> _checkConnection() async {
+    final result = await Connectivity().checkConnectivity();
+    final connected = result != ConnectivityResult.none;
+    setState(() => _hasConnection = connected);
+    return connected;
   }
 
   void _openBookDetail(BuildContext context, Book book) {
@@ -230,147 +245,153 @@ class _MainPageState extends State<MainPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
+      body: !_hasConnection
+          ? NoConnectionWidget(onRetry: _loadRecommendations)
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
 
-              // --- TODAY'S PICKS ---
-              _sectionLabel("TODAY'S PICKS"),
-              const SizedBox(height: 12),
+                    // --- TODAY'S PICKS ---
+                    _sectionLabel("TODAY'S PICKS"),
+                    const SizedBox(height: 12),
 
-              _isLoading
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(color: Colors.black),
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: _recommendations
-                            .map(
-                              (book) => Padding(
-                                padding: const EdgeInsets.only(right: 12),
-                                child: _bookCard(context, book),
+                    _isLoading
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: CircularProgressIndicator(
+                                color: Colors.black,
                               ),
-                            )
-                            .toList(),
+                            ),
+                          )
+                        : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: _recommendations
+                                  .map(
+                                    (book) => Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: _bookCard(context, book),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ),
+
+                    const SizedBox(height: 28),
+
+                    // --- SEARCH BAR ---
+                    Container(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF5F0E8),
+                        border: Border(
+                          top: BorderSide(color: Colors.black, width: 2),
+                          bottom: BorderSide(color: Colors.black, width: 2),
+                          left: BorderSide(color: Colors.black, width: 2),
+                          right: BorderSide(color: Colors.black, width: 2),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black,
+                            offset: Offset(4, 4),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        onSubmitted: _searchBooks,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: 'SEARCH BOOKS...',
+                          hintStyle: TextStyle(
+                            color: Colors.black38,
+                            fontSize: 13,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          prefixIcon: Icon(Icons.search, color: Colors.black),
+                          filled: true,
+                          fillColor: Color(0xFFF5F0E8),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        ),
                       ),
                     ),
 
-              const SizedBox(height: 28),
+                    const SizedBox(height: 28),
 
-              // --- SEARCH BAR ---
-              Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF5F0E8),
-                  border: Border(
-                    top: BorderSide(color: Colors.black, width: 2),
-                    bottom: BorderSide(color: Colors.black, width: 2),
-                    left: BorderSide(color: Colors.black, width: 2),
-                    right: BorderSide(color: Colors.black, width: 2),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(4, 4),
-                      blurRadius: 0,
+                    // --- BROWSE / SEARCH RESULTS ---
+                    _sectionLabel(
+                      _searchResults.isNotEmpty ? 'RESULTS' : 'BROWSE ALL',
                     ),
+                    const SizedBox(height: 12),
+
+                    _isSearching
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: CircularProgressIndicator(
+                                color: Colors.black,
+                              ),
+                            ),
+                          )
+                        : GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _searchResults.isNotEmpty
+                                ? _searchResults.length
+                                : _recommendations.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                  childAspectRatio: 0.6,
+                                ),
+                            itemBuilder: (context, index) {
+                              final book = _searchResults.isNotEmpty
+                                  ? _searchResults[index]
+                                  : _recommendations[index];
+                              return _smallBookCard(context, book);
+                            },
+                          ),
+
+                    const SizedBox(height: 28),
+
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black, width: 2),
+                        ),
+                        child: const Text(
+                          'SEARCH TO EXPLORE MORE →',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
                   ],
                 ),
-                child: TextField(
-                  onSubmitted: _searchBooks,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Colors.black,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'SEARCH BOOKS...',
-                    hintStyle: TextStyle(
-                      color: Colors.black38,
-                      fontSize: 13,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    prefixIcon: Icon(Icons.search, color: Colors.black),
-                    filled: true,
-                    fillColor: Color(0xFFF5F0E8),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
               ),
-
-              const SizedBox(height: 28),
-
-              // --- BROWSE / SEARCH RESULTS ---
-              _sectionLabel(
-                _searchResults.isNotEmpty ? 'RESULTS' : 'BROWSE ALL',
-              ),
-              const SizedBox(height: 12),
-
-              _isSearching
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(color: Colors.black),
-                      ),
-                    )
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _searchResults.isNotEmpty
-                          ? _searchResults.length
-                          : _recommendations.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 0.6,
-                          ),
-                      itemBuilder: (context, index) {
-                        final book = _searchResults.isNotEmpty
-                            ? _searchResults[index]
-                            : _recommendations[index];
-                        return _smallBookCard(context, book);
-                      },
-                    ),
-
-              const SizedBox(height: 28),
-
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
-                  child: const Text(
-                    'SEARCH TO EXPLORE MORE →',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 

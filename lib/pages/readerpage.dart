@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:granth/services/firestore_service.dart';
 
 class ReaderPage extends StatefulWidget {
   final String title;
@@ -13,6 +14,12 @@ class ReaderPage extends StatefulWidget {
 class _ReaderPageState extends State<ReaderPage> {
   double _fontSize = 16;
   bool _showControls = true;
+
+  @override
+  void initState() {
+    super.initState();
+    FirestoreService().logReadingActivity();
+  }
 
   // Gutenberg books have a lot of header junk before the actual text
   // This strips everything before "*** START OF" marker

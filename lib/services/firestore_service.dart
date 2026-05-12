@@ -60,4 +60,42 @@ class FirestoreService {
       return [];
     }
   }
+
+  Future<void> logReadingActivity() async {
+    try {
+      final today = DateTime.now();
+      final dateKey =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final ref = _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('readingActivity')
+          .doc(dateKey);
+
+      final doc = await ref.get();
+      if (doc.exists) {
+        await ref.update({'count': FieldValue.increment(1)});
+      } else {
+        await ref.set({'date': dateKey, 'count': 1});
+      }
+    } catch (e) {
+      print('Error logging activity: $e');
+    }
+  }
+
+  Future<Map<String, int>> getReadingActivity() async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .collection('readingActivity')
+          .get();
+      return {
+        for (final doc in snapshot.docs)
+          doc.id: (doc.data()['count'] as int? ?? 0),
+      };
+    } catch (e) {
+      return {};
+    }
+  }
 }

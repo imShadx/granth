@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:granth/services/auth_service.dart';
 import 'package:granth/services/firestore_service.dart';
 import 'package:granth/pages/homepage.dart';
+import 'package:granth/widgets/reading_graph.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -24,8 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _usernameController.text =
-        _user?.displayName ?? '';
+    _usernameController.text = _user?.displayName ?? '';
     _loadSavedCount();
   }
 
@@ -101,12 +101,17 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(3, 3),
-                      blurRadius: 0),
+                    color: Colors.black,
+                    offset: Offset(3, 3),
+                    blurRadius: 0,
+                  ),
                 ],
               ),
-              child: const Icon(Icons.arrow_back, color: Colors.black, size: 20),
+              child: const Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+                size: 20,
+              ),
             ),
           ),
         ),
@@ -143,9 +148,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(6, 6),
-                      blurRadius: 0),
+                    color: Colors.black,
+                    offset: Offset(6, 6),
+                    blurRadius: 0,
+                  ),
                 ],
               ),
               child: Row(
@@ -162,8 +168,11 @@ class _ProfilePageState extends State<ProfilePage> {
                         right: BorderSide(color: Colors.black, width: 2),
                       ),
                     ),
-                    child: const Icon(Icons.person,
-                        color: Color(0xFFFF3F00), size: 36),
+                    child: const Icon(
+                      Icons.person,
+                      color: Color(0xFFFF3F00),
+                      size: 36,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -231,6 +240,8 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             const SizedBox(height: 24),
+            const ReadingActivityGraph(),
+            const SizedBox(height: 24),
 
             // Username section
             _sectionLabel('USERNAME'),
@@ -249,9 +260,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(4, 4),
-                      blurRadius: 0),
+                    color: Colors.black,
+                    offset: Offset(4, 4),
+                    blurRadius: 0,
+                  ),
                 ],
               ),
               child: _editingUsername
@@ -284,7 +296,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           onTap: _savingUsername ? null : _saveUsername,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             color: Colors.black,
                             child: _savingUsername
                                 ? const SizedBox(
@@ -309,14 +323,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         const SizedBox(width: 8),
                         GestureDetector(
-                          onTap: () =>
-                              setState(() => _editingUsername = false),
+                          onTap: () => setState(() => _editingUsername = false),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: Colors.black, width: 2),
+                              border: Border.all(color: Colors.black, width: 2),
                             ),
                             child: const Text(
                               'X',
@@ -332,8 +346,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     )
                   : GestureDetector(
-                      onTap: () =>
-                          setState(() => _editingUsername = true),
+                      onTap: () => setState(() => _editingUsername = true),
                       child: Row(
                         children: [
                           Expanded(
@@ -354,8 +367,11 @@ class _ProfilePageState extends State<ProfilePage> {
                           Container(
                             color: const Color(0xFFFF3F00),
                             padding: const EdgeInsets.all(6),
-                            child: const Icon(Icons.edit,
-                                color: Colors.black, size: 14),
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.black,
+                              size: 14,
+                            ),
                           ),
                         ],
                       ),
@@ -380,9 +396,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black,
-                        offset: Offset(5, 5),
-                        blurRadius: 0),
+                      color: Colors.black,
+                      offset: Offset(5, 5),
+                      blurRadius: 0,
+                    ),
                   ],
                 ),
                 child: const Row(
@@ -446,8 +463,7 @@ class _ProfilePageState extends State<ProfilePage> {
           right: BorderSide(color: Colors.black, width: 2),
         ),
         boxShadow: [
-          BoxShadow(
-              color: Colors.black, offset: Offset(4, 4), blurRadius: 0),
+          BoxShadow(color: Colors.black, offset: Offset(4, 4), blurRadius: 0),
         ],
       ),
       child: Row(
