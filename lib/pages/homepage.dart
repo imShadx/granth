@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:granth/pages/mainpage.dart';
 
 class HomePage extends StatefulWidget {
@@ -24,29 +23,41 @@ class _HomePageState extends State<HomePage>
 
     _offsetAnimation = Tween<double>(
       begin: 0,
-      end: -20,
+      end: -18,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
   void dispose() {
-    _controller.dispose(); // always clean up
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFaa6469),
+      backgroundColor: const Color(0xFFFF3F00),
       body: Stack(
         children: [
+          // Background accent block
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.55,
+            child: Container(
+              color: const Color(0xFFFF3F00), // brutalist orange-red
+            ),
+          ),
+
           SizedBox.expand(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Spacer(),
-                Container(),
+
+                // Floating book icon
                 AnimatedBuilder(
                   animation: _offsetAnimation,
                   builder: (context, child) {
@@ -55,156 +66,203 @@ class _HomePageState extends State<HomePage>
                       child: child,
                     );
                   },
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ImageFiltered(
-                        imageFilter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                        child: const Icon(
-                          Icons.auto_stories,
-                          size: 130,
-                          color: Color(0xB3c6b498),
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F0E8),
+                      border: Border.all(color: Colors.black, width: 3),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black,
+                          offset: Offset(6, 6),
+                          blurRadius: 0,
                         ),
-                      ),
-                      const Icon(
-                        Icons.auto_stories,
-                        size: 130,
-                        color: Color(0xB3c6b498),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.auto_stories,
+                      size: 80,
+                      color: Color(0xFFFF3F00),
+                    ),
                   ),
                 ),
+
+                const SizedBox(height: 28),
+
+                // App name
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 6,
+                  ),
+                  // decoration: BoxDecoration(
+                  //   // color: Colors.black,
+                  //   border: Border.all(color: Colors.black, width: 3),
+                  // ),
+                  child: const Text(
+                    'GRANTH',
+                    style: TextStyle(
+                      fontFamily: 'Comforter',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 48,
+                      color: Colors.black,
+                      letterSpacing: 4,
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 20),
-                Text(
-                  'Granth',
-                  style: TextStyle(
-                    fontFamily: 'Comforter',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 45,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Text(
-                  'read yourself to sleep',
+
+                const Text(
+                  'read yourself to sleep.',
                   style: TextStyle(
                     fontFamily: 'JimNightshade',
                     fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontSize: 18,
+                    color: Colors.black,
+                    letterSpacing: 1,
                   ),
                 ),
+
                 const Spacer(),
-                Text(
-                  'swipe up',
+
+                const Text(
+                  'SWIPE UP',
                   style: TextStyle(
                     fontFamily: 'Arial',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                    letterSpacing: 3,
+                    color: Colors.black,
                   ),
                 ),
-                const Icon(Icons.arrow_upward, size: 20, color: Colors.black),
+                const SizedBox(height: 6),
+                const Icon(Icons.keyboard_arrow_up, size: 24, color: Colors.black),
                 const SizedBox(height: 80),
               ],
             ),
           ),
 
-          // ---- login sheet on top ----
+          // Draggable login sheet
           DraggableScrollableSheet(
-            initialChildSize: 0.05,
-            minChildSize: 0.05,
-            maxChildSize: 0.6,
+            initialChildSize: 0.07,
+            minChildSize: 0.07,
+            maxChildSize: 0.62,
             snap: true,
-            snapSizes: const [0.05, 0.6],
+            snapSizes: const [0.07, 0.62],
             builder: (context, scrollController) {
               return Container(
-                decoration: BoxDecoration(
-                  color: Color(0xFF8B4F54).withOpacity(0.9),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration:  BoxDecoration(
+                  color: Color(0xFFF5F0E8).withOpacity(0.95),
+                  border: Border(
+                    top: BorderSide(color: Colors.black, width: 3),
+                    left: BorderSide(color: Colors.black, width: 3),
+                    right: BorderSide(color: Colors.black, width: 3),
+                  ),
                 ),
                 child: SingleChildScrollView(
                   controller: scrollController,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 12),
-                      Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.white38,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      const Text(
-                        'Welcome back',
-                        style: TextStyle(
-                          fontFamily: 'Comforter',
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Email',
-                            filled: true,
-                            fillColor: Colors.white24,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: TextField(
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            hintText: 'Password',
-                            filled: true,
-                            fillColor: Colors.white24,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => MainPage()),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFc6b498),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 50,
-                            vertical: 15,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
+                      // Handle
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 14, bottom: 6),
+                          child: Container(
+                            width: 44,
+                            height: 5,
                             color: Colors.black,
-                            fontFamily: 'JimNightshade',
-                            fontSize: 25,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 40),
+
+                      const SizedBox(height: 20),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Label
+                            Container(
+                              // color: const Color(0xFFFF3F00),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              child: const Text(
+                                'WELCOME BACK',
+                                style: TextStyle(
+                                  fontFamily: 'Comforter',
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // Email field
+                            _brutalField(hint: 'EMAIL'),
+
+                            const SizedBox(height: 16),
+
+                            // Password field
+                            _brutalField(hint: 'PASSWORD', obscure: true),
+
+                            const SizedBox(height: 28),
+
+                            // Login button
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MainPage(),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 3,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0xFFFF3F00),
+                                      offset: Offset(5, 5),
+                                      blurRadius: 0,
+                                    ),
+                                  ],
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'LOGIN →',
+                                    style: TextStyle(
+                                      fontFamily: 'JimNightshade',
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFF5F0E8),
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -212,6 +270,45 @@ class _HomePageState extends State<HomePage>
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _brutalField({required String hint, bool obscure = false}) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFF5F0E8),
+        border: Border(
+          bottom: BorderSide(color: Colors.black, width: 3),
+          top: BorderSide(color: Colors.black, width: 3),
+          left: BorderSide(color: Colors.black, width: 3),
+          right: BorderSide(color: Colors.black, width: 3),
+        ),
+      ),
+      child: TextField(
+        obscureText: obscure,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: Colors.black,
+          letterSpacing: 1,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(
+            color: Colors.black38,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+            fontSize: 13,
+          ),
+          filled: true,
+          fillColor: const Color(0xFFF5F0E8),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
       ),
     );
   }
