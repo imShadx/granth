@@ -4,6 +4,8 @@ import 'package:granth/pages/bookdetail.dart';
 import 'package:granth/models/book_model.dart';
 import 'package:granth/services/book_service.dart';
 import 'package:granth/pages/savedpage.dart';
+import 'package:granth/pages/profilepage.dart';
+import 'package:granth/pages/chatpage.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -34,7 +36,10 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<void> _searchBooks(String query) async {
-    if (query.trim().isEmpty) return;
+    if (query.trim().isEmpty) {
+      setState(() => _searchResults = []);
+      return;
+    }
     setState(() => _isSearching = true);
     final books = await _bookService.searchBooks(query);
     setState(() {
@@ -100,6 +105,33 @@ class _MainPageState extends State<MainPage> {
                       ],
                     ),
                   ),
+                  PopupMenuItem(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChatPage(),
+                        ),
+                      );
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(Icons.auto_awesome, size: 18, color: Colors.black),
+                        SizedBox(width: 10),
+                        Text(
+                          'ASK AI',
+                          style: TextStyle(
+                            fontFamily: 'JimNightshade',
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   PopupMenuItem(
                     onTap: () {
                       Navigator.pushReplacement(
@@ -183,7 +215,14 @@ class _MainPageState extends State<MainPage> {
               ),
               child: IconButton(
                 icon: const Icon(Icons.person, color: Colors.black, size: 20),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfilePage(),
+                    ),
+                  );
+                },
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               ),

@@ -10,49 +10,52 @@ class FirestoreService {
   CollectionReference get _savedBooks => _firestore
       .collection('users')
       .doc(_auth.currentUser!.uid)
-      .collection('books');
+      .collection('savedBooks');
+
+  String _cleanId(String id) => id.replaceAll('/', '_');
 
   Future<void> saveBook(Book book) async {
-    try{
-      await _savedBooks.doc(book.id).set(book.toMap());
-    }
-    catch(e){
+    try {
+      print('Saving book: ${book.id} for user: ${_auth.currentUser?.uid}');
+      await _savedBooks.doc(_cleanId(book.id)).set(book.toMap());
+    } catch (e) {
       print('Error saving book: $e');
     }
   }
 
   Future<void> unsaveBook(String bookId) async {
-    try{
-      await _savedBooks.doc(bookId).delete();
-    }
-    catch(e){
+    try {
+      await _savedBooks.doc(_cleanId(bookId)).delete();
+    } catch (e) {
       print('Error removing book: $e');
     }
   }
 
   Future<bool> isBookSaved(String bookId) async {
-    try{
-      final doc = await _savedBooks.doc(bookId).get();
+    try {
+      final doc = await _savedBooks.doc(_cleanId(bookId)).get();
       return doc.exists;
-    }
-    catch(e){
+    } catch (e) {
       print('Error checking book: $e');
       return false;
     }
   }
 
   Future<List<Book>> getSavedBooks() async {
-    try{
+    try {
       final snapshot = await _savedBooks.get();
-      return snapshot.docs.map((doc) => Book(
-        id: doc['id'],
-        title: doc['title'],
-        author: doc['author'],
-        coverId: doc['coverId'],
-        summary: doc['summary'],
-      )).toList();
-    }
-    catch(e){
+      return snapshot.docs
+          .map(
+            (doc) => Book(
+              id: doc['id'],
+              title: doc['title'],
+              author: doc['author'],
+              coverId: doc['coverId'],
+              summary: doc['summary'],
+            ),
+          )
+          .toList();
+    } catch (e) {
       print('Error fetching saved books: $e');
       return [];
     }

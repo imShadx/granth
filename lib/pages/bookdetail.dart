@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:granth/models/book_model.dart';
 import 'package:granth/services/book_service.dart';
 import 'package:granth/services/firestore_service.dart';
+import 'package:granth/services/gutenberg_service.dart';
+import 'readerpage.dart';
 
 class BookDetailPage extends StatefulWidget {
   final Book book;
@@ -19,6 +21,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
   bool _loadingSummary = true;
   bool _isSaved = false;
   bool _savingInProgress = false;
+  bool _loadingReader = false;
 
   @override
   void initState() {
@@ -59,6 +62,44 @@ class _BookDetailPageState extends State<BookDetailPage> {
     );
   }
 
+  Future<void> _openReader() async {
+    setState(() => _loadingReader = true);
+
+    final url = await GutenbergService().findBookUrl(widget.book.title);
+
+    if (url == null) {
+      setState(() => _loadingReader = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('NOT AVAILABLE ON GUTENBERG →'),
+          backgroundColor: Colors.black,
+        ),
+      );
+      return;
+    }
+
+    final text = await GutenbergService().fetchBookText(url);
+    setState(() => _loadingReader = false);
+
+    if (text == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('FAILED TO LOAD BOOK →'),
+          backgroundColor: Colors.black,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            ReaderPage(title: widget.book.title, bookText: text),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,12 +127,17 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(3, 3),
-                      blurRadius: 0),
+                    color: Colors.black,
+                    offset: Offset(3, 3),
+                    blurRadius: 0,
+                  ),
                 ],
               ),
-              child: const Icon(Icons.arrow_back, color: Colors.black, size: 20),
+              child: const Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+                size: 20,
+              ),
             ),
           ),
         ),
@@ -129,9 +175,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black,
-                        offset: Offset(8, 8),
-                        blurRadius: 0),
+                      color: Colors.black,
+                      offset: Offset(8, 8),
+                      blurRadius: 0,
+                    ),
                   ],
                 ),
                 child: widget.book.coverId != null
@@ -220,9 +267,10 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black,
-                      offset: Offset(4, 4),
-                      blurRadius: 0),
+                    color: Colors.black,
+                    offset: Offset(4, 4),
+                    blurRadius: 0,
+                  ),
                 ],
               ),
               child: _loadingSummary
@@ -252,9 +300,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                 // Read button (placeholder for now)
                 Expanded(
                   child: GestureDetector(
-                    onTap: () {
-                      // TODO: navigate to reader page
-                    },
+                    onTap: _loadingReader ? null : _openReader,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: const BoxDecoration(
@@ -267,29 +313,44 @@ class _BookDetailPageState extends State<BookDetailPage> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                              color: Color(0xFFFF3F00),
-                              offset: Offset(5, 5),
-                              blurRadius: 0),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.menu_book,
-                              color: Color(0xFFFF3F00), size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'READ →',
-                            style: TextStyle(
-                              fontFamily: 'JimNightshade',
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFF5F0E8),
-                              letterSpacing: 2,
-                            ),
+                            color: Color(0xFFFF3F00),
+                            offset: Offset(5, 5),
+                            blurRadius: 0,
                           ),
                         ],
                       ),
+                      child: _loadingReader
+                          ? const Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFFF3F00),
+                                  strokeWidth: 3,
+                                ),
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.menu_book,
+                                  color: Color(0xFFFF3F00),
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'READ →',
+                                  style: TextStyle(
+                                    fontFamily: 'JimNightshade',
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFF5F0E8),
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ),
@@ -314,20 +375,25 @@ class _BookDetailPageState extends State<BookDetailPage> {
                         ),
                         boxShadow: const [
                           BoxShadow(
-                              color: Colors.black,
-                              offset: Offset(5, 5),
-                              blurRadius: 0),
+                            color: Colors.black,
+                            offset: Offset(5, 5),
+                            blurRadius: 0,
+                          ),
                         ],
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _savingInProgress
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                      color: Colors.black, strokeWidth: 2),
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Color(0xFFFF3F00),
+                                      strokeWidth: 3,
+                                    ),
+                                  ),
                                 )
                               : Icon(
                                   _isSaved
