@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "938712839227",
+    "project_id": "granth-d3cf5",
+    "storage_bucket": "granth-d3cf5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938712839227:android:9ce987d310cf4727d6581e",
+        "android_client_info": {
+          "package_name": "com.example.granth"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDy_uJbe6cglnkVGlKdATu9vAnF0mBzaJU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
